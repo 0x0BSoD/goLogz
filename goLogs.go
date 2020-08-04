@@ -17,7 +17,7 @@ const (
 
 type GoLogz struct {
 	loggers map[string]*log.Logger
-	colors  bool
+	Colors  bool
 }
 
 type ParameterItem struct {
@@ -36,8 +36,8 @@ func Init(params []ParameterItem) (GoLogz, error) {
 	items["Warning"] = log.New(os.Stdout, "[WARNING] ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
 	items["Error"] = log.New(os.Stdout, "[ERROR] ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
 
-	defFlags := log.Ldate|log.Ltime|log.LUTC|log.Lshortfile
-	noLineNumFlags := log.Ldate|log.Ltime|log.LUTC
+	defFlags := log.Ldate | log.Ltime | log.LUTC | log.Lshortfile
+	noLineNumFlags := log.Ldate | log.Ltime | log.LUTC
 
 	for _, p := range params {
 		flags := defFlags
@@ -83,7 +83,7 @@ func Init(params []ParameterItem) (GoLogz, error) {
 }
 
 func (g *GoLogz) Trace(msg string) {
-	if g.colors {
+	if g.Colors {
 		g.loggers["Trace"].Println(colorWhite, msg, colorReset)
 	} else {
 		g.loggers["Trace"].Println(msg)
@@ -91,7 +91,7 @@ func (g *GoLogz) Trace(msg string) {
 }
 
 func (g *GoLogz) Info(msg string) {
-	if g.colors {
+	if g.Colors {
 		g.loggers["Info"].Println(colorBlue, msg, colorReset)
 	} else {
 		g.loggers["Info"].Println(msg)
@@ -99,7 +99,7 @@ func (g *GoLogz) Info(msg string) {
 }
 
 func (g *GoLogz) Warning(msg string) {
-	if g.colors {
+	if g.Colors {
 		g.loggers["Warning"].Println(colorYellow, msg, colorReset)
 	} else {
 		g.loggers["Warning"].Println(msg)
@@ -107,7 +107,7 @@ func (g *GoLogz) Warning(msg string) {
 }
 
 func (g *GoLogz) Error(msg string) {
-	if g.colors {
+	if g.Colors {
 		g.loggers["Error"].Println(colorRed, msg, colorReset)
 	} else {
 		g.loggers["Error"].Println(msg)
@@ -116,7 +116,7 @@ func (g *GoLogz) Error(msg string) {
 
 func (g *GoLogz) Custom(name, msg string) {
 	if logger, ok := g.loggers[name]; ok {
-		if g.colors {
+		if g.Colors {
 			logger.Println(colorPurple, msg, colorReset)
 		} else {
 			logger.Println(msg)

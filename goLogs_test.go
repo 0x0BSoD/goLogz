@@ -7,7 +7,7 @@ func TestInit(t *testing.T) {
 		{
 			Level:     "ACTION",
 			OutHandle: "STDOUT",
-			LineNum: false,
+			LineNum:   false,
 		},
 	})
 	if err != nil {
@@ -15,7 +15,7 @@ func TestInit(t *testing.T) {
 		return
 	}
 
-	logs.colors = true
+	logs.Colors = true
 
 	logs.Trace("this is a trace")
 	logs.Info("this is a info")
