@@ -19,6 +19,7 @@ func TestInit(t *testing.T) {
 
 	logs.Trace("this is a trace")
 	logs.Info("this is a info")
+	logs.InfoJson(map[string]int{"foo": 1, "bar": 2, "baz": 3})
 	logs.Warning("this is a warning")
 	logs.Error("this is a error")
 	logs.Custom("ACTION", "this is a custom")
