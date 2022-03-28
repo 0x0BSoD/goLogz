@@ -16,9 +16,30 @@ const (
 	colorWhite  = "\033[37m"
 )
 
+type LogLevel int
+
+const (
+	Trace LogLevel = iota
+	Info
+	Warning
+	Error
+)
+
+func (l LogLevel) String() string {
+	_strings := []string{
+		"Trace",
+		"Info",
+		"Warning",
+		"Error",
+	}
+	return _strings[l]
+}
+
 type GoLogz struct {
 	loggers map[string]*log.Logger
 	Colors  bool
+	Level   LogLevel
+	colors  map[string]string
 }
 
 type ParameterItem struct {
@@ -30,12 +51,19 @@ type ParameterItem struct {
 func Init(params []ParameterItem) (GoLogz, error) {
 
 	items := make(map[string]*log.Logger)
+	colors := make(map[string]string, 4)
 
 	//default config
-	items["Trace"] = log.New(os.Stdout, "[TRACE] ", log.Ldate|log.Ltime|log.LUTC)
-	items["Info"] = log.New(os.Stdout, "[INFO] ", log.Ldate|log.Ltime|log.LUTC)
-	items["Warning"] = log.New(os.Stdout, "[WARNING] ", log.Ldate|log.Ltime|log.LUTC)
-	items["Error"] = log.New(os.Stdout, "[ERROR] ", log.Ldate|log.Ltime|log.LUTC)
+	items[Trace.String()] = log.New(os.Stdout, "[TRACE] ", log.Ldate|log.Ltime|log.LUTC)
+	items[Info.String()] = log.New(os.Stdout, "[INFO] ", log.Ldate|log.Ltime|log.LUTC)
+	items[Warning.String()] = log.New(os.Stdout, "[WARNING] ", log.Ldate|log.Ltime|log.LUTC)
+	items[Error.String()] = log.New(os.Stdout, "[ERROR] ", log.Ldate|log.Ltime|log.LUTC)
+
+	//default colors
+	colors[Trace.String()] = colorWhite
+	colors[Info.String()] = colorBlue
+	colors[Warning.String()] = colorYellow
+	colors[Error.String()] = colorRed
 
 	defFlags := log.Ldate | log.Ltime | log.LUTC | log.Lshortfile
 	noLineNumFlags := log.Ldate | log.Ltime | log.LUTC
@@ -80,60 +108,76 @@ func Init(params []ParameterItem) (GoLogz, error) {
 		}
 	}
 
-	return GoLogz{loggers: items}, nil
+	return GoLogz{loggers: items, colors: colors}, nil
+}
+
+func (g *GoLogz) log(l LogLevel, prettyJson bool, m ...interface{}) {
+	jump := false
+	if prettyJson {
+		b, err := json.MarshalIndent(m[0], "", "  ")
+		if err == nil {
+			if g.Colors {
+				g.loggers[l.String()].Println(g.colors[l.String()], "🡦\n"+string(b), colorReset)
+			} else {
+				g.loggers[l.String()].Println("🡦\n" + string(b))
+			}
+		} else {
+			jump = true
+		}
+	} else {
+		jump = true
+	}
+
+	if jump {
+		if g.Colors {
+			g.loggers[l.String()].Println(g.colors[l.String()], m, colorReset)
+		} else {
+			g.loggers[l.String()].Println(m...)
+		}
+	}
 }
 
 func (g *GoLogz) Trace(msg ...interface{}) {
-	if g.Colors {
-		g.loggers["Trace"].Println(colorWhite, msg, colorReset)
-	} else {
-		g.loggers["Trace"].Println(msg...)
+	if g.Level == Trace {
+		g.log(Trace, false, msg...)
 	}
 }
-func (g *GoLogz) TraceJson(msg interface{}) {
-	b, err := json.MarshalIndent(msg, "", "  ")
-	if err == nil {
-		msg = string(b)
-	}
-	if g.Colors {
-		g.loggers["Trace"].Println(colorWhite, "🡦\n", msg, colorReset)
-	} else {
-		g.loggers["Trace"].Println(msg, "🡦\n")
+func (g *GoLogz) TraceJson(msg ...interface{}) {
+	if g.Level == Trace {
+		g.log(Trace, true, msg...)
 	}
 }
 
 func (g *GoLogz) Info(msg ...interface{}) {
-	if g.Colors {
-		g.loggers["Info"].Println(colorBlue, msg, colorReset)
-	} else {
-		g.loggers["Info"].Println(msg...)
+	if (g.Level == Trace) || (g.Level == Info) {
+		g.log(Info, false, msg...)
 	}
 }
-func (g *GoLogz) InfoJson(msg interface{}) {
-	b, err := json.MarshalIndent(msg, "", "  ")
-	if err == nil {
-		msg = string(b)
-	}
-	if g.Colors {
-		g.loggers["Info"].Println(colorBlue, "🡦\n", msg, colorReset)
-	} else {
-		g.loggers["Info"].Println("🡦\n", msg)
+func (g *GoLogz) InfoJson(msg ...interface{}) {
+	if (g.Level == Trace) || (g.Level == Info) {
+		g.log(Info, true, msg...)
 	}
 }
 
 func (g *GoLogz) Warning(msg ...interface{}) {
-	if g.Colors {
-		g.loggers["Warning"].Println(colorYellow, msg, colorReset)
-	} else {
-		g.loggers["Warning"].Println(msg...)
+	if (g.Level == Trace) || (g.Level == Info) || (g.Level == Warning) {
+		g.log(Warning, false, msg...)
+	}
+}
+func (g *GoLogz) WarningJson(msg ...interface{}) {
+	if (g.Level == Trace) || (g.Level == Info) || (g.Level == Warning) {
+		g.log(Warning, true, msg...)
 	}
 }
 
 func (g *GoLogz) Error(msg ...interface{}) {
-	if g.Colors {
-		g.loggers["Error"].Println(colorRed, msg, colorReset)
-	} else {
-		g.loggers["Error"].Println(msg...)
+	if (g.Level == Trace) || (g.Level == Info) || (g.Level == Warning) || (g.Level == Error) {
+		g.log(Error, false, msg...)
+	}
+}
+func (g *GoLogz) ErrorJson(msg ...interface{}) {
+	if (g.Level == Trace) || (g.Level == Info) || (g.Level == Warning) || (g.Level == Error) {
+		g.log(Error, true, msg...)
 	}
 }
 
@@ -144,6 +188,5 @@ func (g *GoLogz) Custom(name string, msg ...interface{}) {
 		} else {
 			logger.Println(msg...)
 		}
-
 	}
 }
